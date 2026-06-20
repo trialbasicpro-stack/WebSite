@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Project Maniac-Style Single HTML Game</title>
+  <style>
+    :root{
+      --panel: rgba(8, 12, 18, .55);
+      --panel2: rgba(255,255,255,.08);
+      --text: #eef6ff;
+      --muted: rgba(238,246,255,.76);
+      --accent: #7dd3ff;
+      --good: #7dffb5;
+      --warn: #ffd26a;
+      --danger: #ff7070;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #9fc7ef;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      touch-action: none;
+    }
+
+    canvas { display: block; }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      color: var(--text);
+      text-shadow: 0 2px 8px rgba(0,0,0,.35);
+    }
+
+    .panel {
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 20px 50px rgba(0,0,0,.22);
+      border-radius: 18px;
+    }
+
+    #topLeft {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      width: min(360px, calc(100vw - 24px));
+      padding: 12px 14px;
+    }
+
+    #topRight {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      width: min(330px, calc(100vw - 24px));
+      padding: 12px 14px;
+    }
+
+    #title {
+      font-size: 18px;
+      font-weight: 900;
+      margin-bottom: 4px;
+      letter-spacing: .3px;
+    }
+
+    #sub {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .statGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat {
+      background: var(--panel2);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .stat b {
+      color: white;
+    }
+
+    #missionTitle {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    #missionText {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    #message {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity .25s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #message.show { opacity: 1; }
+
+    #minimapWrap {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      width: 190px;
+      height: 190px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #minimapTitle {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .3px;
+      color: rgba(255,255,255,.92);
+    }
+
+    #minimap {
+      width: 170px;
+      height: 170px;
+      border-radius: 14px;
+      background: rgba(10, 15, 22, .7);
+      border: 1px solid rgba(255,255,255,.14);
+      display: block;
+    }
+
+    #mobile {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .stick {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      width: 148px;
+      height: 148px;
+      border-radius: 50%;
+      pointer-events: auto;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      box-shadow: 0 16px 34px rgba(0,0,0,.2);
+    }
+
+    .knob {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.2);
+      box-shadow: inset 0 0 18px rgba(255,255,255,.08);
+      transform: translate(0px, 0px);
+    }
+
+    .btn {
+      position: absolute;
+      pointer-events: auto;
+      width: 74px;
+      height: 74px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 16px 34px rgba(0,0,0,.2);
+      color: white;
+      font-weight: 800;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    #btnJump { right: 18px; bottom: 26px; }
+    #btnFly  { right: 96px; bottom: 106px; }
+    #btnSprint { right: 18px; bottom: 106px; }
+    #btnDash { right: 96px; bottom: 26px; }
+    #btnCam  { right: 176px; bottom: 66px; width: 64px; height: 64px; border-radius: 16px; font-size: 11px; }
+
+    #crosshair {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      transform: translate(-50%, -50%);
+      opacity: .72;
+    }
+    #crosshair::before, #crosshair::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      background: rgba(255,255,255,.95);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 8px rgba(255,255,255,.35);
+    }
+    #crosshair::before { width: 16px; height: 2px; }
+    #crosshair::after { width: 2px; height: 16px; }
+
+    #healthBar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow: hidden;
+      margin-top: 8px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    #healthFill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #72ffa7, #ffd66b, #ff6e6e);
+      transform-origin: left center;
+      transform: scaleX(1);
+    }
+
+    @media (pointer:fine) {
+      #mobile { display: none; }
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.179.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.179.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <div id="hud">
+    <div id="topLeft" class="panel">
+      <div id="title">Project Maniac-Style Open World</div>
+      <div id="sub">
+        WASD move · Space jump · F fly · Shift sprint · Q dash · Mouse drag look · R reset
+        <br>Uses your <b>character.glb</b> animations: <b>Idle / Run / Jump / Land</b>.
+      </div>
+      <div class="statGrid">
+        <div class="stat">State: <b id="stateTxt">loading</b></div>
+        <div class="stat">Speed: <b id="speedTxt">0.0</b></div>
+        <div class="stat">Flight: <b id="flightTxt">off</b></div>
+        <div class="stat">Camera: <b id="cameraTxt">close</b></div>
+      </div>
+      <div id="healthBar"><div id="healthFill"></div></div>
+    </div>
+
+    <div id="topRight" class="panel">
+      <div id="missionTitle">Training Mission</div>
+      <div id="missionText">Reach the glowing beacon, then practice running, jumping, and flying between the white skyscrapers.</div>
+    </div>
+
+    <div id="message">Welcome</div>
+    <div id="crosshair"></div>
+
+    <div id="minimapWrap" class="panel">
+      <div id="minimapTitle">MINIMAP</div>
+      <canvas id="minimap" width="170" height="170"></canvas>
+    </div>
+  </div>
+
+  <div id="mobile">
+    <div class="stick" id="stick"><div class="knob" id="knob"></div></div>
+    <div class="btn" id="btnJump">JUMP</div>
+    <div class="btn" id="btnFly">FLY</div>
+    <div class="btn" id="btnSprint">RUN</div>
+    <div class="btn" id="btnDash">DASH</div>
+    <div class="btn" id="btnCam">CAM</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // ============================================================
+    // UTILITIES
+    // ============================================================
+    const clamp = THREE.MathUtils.clamp;
+    const lerp = THREE.MathUtils.lerp;
+    const degToRad = THREE.MathUtils.degToRad;
+
+    function lerpAngle(a, b, t) {
+      let delta = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI;
+      if (delta < -Math.PI) delta += Math.PI * 2;
+      return a + delta * t;
+    }
+
+    function rand(min, max) { return min + Math.random() * (max - min); }
+    function chance(p) { return Math.random() < p; }
+
+    function showMessage(text, duration = 1400) {
+      messageEl.textContent = text;
+      messageEl.classList.add('show');
+      clearTimeout(showMessage._t);
+      showMessage._t = setTimeout(() => messageEl.classList.remove('show'), duration);
+    }
+
+    function setMission(text) {
+      missionTextEl.textContent = text;
+    }
+
+    // ============================================================
+    // DOM
+    // ============================================================
+    const stateTxt = document.getElementById('stateTxt');
+    const speedTxt = document.getElementById('speedTxt');
+    const flightTxt = document.getElementById('flightTxt');
+    const cameraTxt = document.getElementById('cameraTxt');
+    const healthFill = document.getElementById('healthFill');
+    const missionTextEl = document.getElementById('missionText');
+    const messageEl = document.getElementById('message');
+    const minimap = document.getElementById('minimap');
+    const mm = minimap.getContext('2d');
+
+    // ============================================================
+    // RENDERER / SCENE / CAMERA
+    // ============================================================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9ec7ef);
+    scene.fog = new THREE.FogExp2(0xa7c9e8, 0.0009);
+
+    const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 5000);
+    camera.position.set(0, 8, 16);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    document.body.appendChild(renderer.domElement);
+
+    // ============================================================
+    // LIGHTS
+    // ============================================================
+    const hemi = new THREE.HemisphereLight(0xeaf6ff, 0x53647a, 1.3);
+    scene.add(hemi);
+
+    const sun = new THREE.DirectionalLight(0xffffff, 3.1);
+    sun.position.set(180, 250, 120);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.near = 10;
+    sun.shadow.camera.far = 800;
+    sun.shadow.camera.left = -300;
+    sun.shadow.camera.right = 300;
+    sun.shadow.camera.top = 300;
+    sun.shadow.camera.bottom = -300;
+    scene.add(sun);
+
+    // ============================================================
+    // WORLD ROOT
+    // ============================================================
+    const world = new THREE.Group();
+    scene.add(world);
+
+    // ============================================================
+    // MATERIALS (whitebox / Project Maniac-like look)
+    // ============================================================
+    const matGround = new THREE.MeshStandardMaterial({
+      color: 0xf2f5fb,
+      roughness: 1.0,
+      metalness: 0.0
+    });
+
+    const matPlatform = new THREE.MeshStandardMaterial({
+      color: 0xe5ebf5,
+      roughness: 1.0,
+      metalness: 0.0
+    });
+
+    const matBuilding = new THREE.MeshStandardMaterial({
+      color: 0xd8dde6,
+      roughness: 1.0,
+      metalness: 0.0
+    });
+
+    const matDark = new THREE.MeshStandardMaterial({
+      color: 0x98a2b4,
+      roughness: 0.95,
+      metalness: 0.0
+    });
+
+    const matAccent = new THREE.MeshStandardMaterial({
+      color: 0x8fd7ff,
+      roughness: 0.3,
+      metalness: 0.1,
+      emissive: 0x7dcfff,
+      emissiveIntensity: 0.25
+    });
+
+    const matBeacon = new THREE.MeshStandardMaterial({
+      color: 0x62c6ff,
+      roughness: 0.2,
+      metalness: 0.1,
+      emissive: 0x2c99ff,
+      emissiveIntensity: 1.0
+    });
+
+    // ============================================================
+    // WHITEBOX TRAINING DECK (main rooftop area)
+    // ============================================================
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(320, 3, 320), matGround);
+    deck.position.set(0, -1.5, 0);
+    deck.receiveShadow = true;
+    world.add(deck);
+
+    const deckTop = new THREE.Mesh(new THREE.PlaneGeometry(320, 320, 1, 1), matPlatform);
+    deckTop.rotation.x = -Math.PI / 2;
+    deckTop.position.y = 0.02;
+    deckTop.receiveShadow = true;
+    world.add(deckTop);
+
+    const deckGrid = new THREE.GridHelper(320, 40, 0xc5cddd, 0xd9e0ea);
+    deckGrid.position.y = 0.06;
+    world.add(deckGrid);
+
+    // Boundary walls like the screenshot feel.
+    function addBoundaryWall(x, z, w, h, d) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), matGround);
+      wall.position.set(x, h / 2 - 1.5, z);
+      wall.castShadow = true;
+      wall.receiveShadow = true;
+      world.add(wall);
+      return wall;
+    }
+
+    addBoundaryWall(0, -165, 340, 120, 6);
+    addBoundaryWall(0, 165, 340, 120, 6);
+    addBoundaryWall(-165, 0, 6, 120, 340);
+    addBoundaryWall(165, 0, 6, 120, 340);
+
+    // Extra sky towers in the distance.
+    const city = new THREE.Group();
+    world.add(city);
+
+    const colliders = [];
+    const buildings = [];
+    const decoration = [];
+    const farBuildings = [];
+
+    function registerCollider(mesh, paddingY = 0) {
+      const box = new THREE.Box3().setFromObject(mesh);
+      colliders.push({ mesh, box, paddingY });
+    }
+
+    function addRooftopRail(x, z, w, h, d) {
+      const railGeo = new THREE.BoxGeometry(w + 1.2, 0.5, 0.5);
+      const railMat = matDark;
+      const rail1 = new THREE.Mesh(railGeo, railMat);
+      rail1.position.set(x, h + 0.25, z + d / 2 + 0.25);
+      const rail2 = new THREE.Mesh(railGeo, railMat);
+      rail2.position.set(x, h + 0.25, z - d / 2 - 0.25);
+      const rail3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, d + 1.2), railMat);
+      rail3.position.set(x + w / 2 + 0.25, h + 0.25, z);
+      const rail4 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, d + 1.2), railMat);
+      rail4.position.set(x - w / 2 - 0.25, h + 0.25, z);
+      world.add(rail1, rail2, rail3, rail4);
+    }
+
+    function addWindowLines(group, w, h, d) {
+      const lineCount = Math.max(2, Math.floor(h / 8));
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xc7cfdb,
+        roughness: 1,
+        metalness: 0
+      });
+      const strip = new THREE.BoxGeometry(Math.max(0.35, w - 1), 0.08, 0.08);
+      for (let i = 1; i <= lineCount; i++) {
+        const yy = (i / (lineCount + 1)) * h;
+        const a = new THREE.Mesh(strip, mat);
+        a.position.set(0, yy, d / 2 + 0.04);
+        const b = new THREE.Mesh(strip, mat);
+        b.position.set(0, yy, -d / 2 - 0.04);
+        b.rotation.y = Math.PI;
+        group.add(a, b);
+      }
+      const strip2 = new THREE.BoxGeometry(0.08, 0.08, Math.max(0.35, d - 1));
+      const colCount = Math.max(2, Math.floor(w / 8));
+      for (let i = 1; i <= colCount; i++) {
+        const xx = (i / (colCount + 1)) * w - w / 2;
+        const c = new THREE.Mesh(strip2, mat);
+        c.position.set(xx, h * 0.48, d / 2 + 0.04);
+        const d2 = new THREE.Mesh(strip2, mat);
+        d2.position.set(xx, h * 0.48, -d / 2 - 0.04);
+        d2.rotation.y = Math.PI / 2;
+        group.add(c, d2);
+      }
+    }
+
+    function makeBuilding(x, z, w, h, d, isFar = false) {
+      const group = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), isFar ? matDark : matBuilding);
+      body.position.y = h / 2;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      group.add(body);
+
+      // Slight roof highlight.
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(w * 0.96, 0.5, d * 0.96), matPlatform);
+      roof.position.y = h + 0.25;
+      group.add(roof);
+
+      // Minimal window/edge lines for the high-rise look.
+      addWindowLines(group, w, h, d);
+
+      // Sometimes add a taller cap to create varied skyline.
+      if (chance(0.35)) {
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(w * 0.42, h * rand(0.15, 0.4), d * 0.42), matAccent);
+        cap.position.set(0, h + cap.geometry.parameters.height / 2 + 0.2, 0);
+        group.add(cap);
+      }
+
+      group.position.set(x, 0, z);
+      world.add(group);
+      registerCollider(body);
+
+      buildings.push({
+        group,
+        w,
+        h,
+        d
+      });
+
+      addRooftopRail(x, z, w, h, d);
+      return group;
+    }
+
+    function buildCity() {
+      // Dense skyline around the training deck.
+      const innerMin = 190;
+      const innerMax = 900;
+      const step = 48;
+
+      for (let x = -innerMax; x <= innerMax; x += step) {
+        for (let z = -innerMax; z <= innerMax; z += step) {
+          const ax = Math.abs(x);
+          const az = Math.abs(z);
+
+          // Keep the main deck open.
+          if (ax < 170 && az < 170) continue;
+
+          const onRoadBand = (ax > 150 && ax < 205) || (az > 150 && az < 205);
+          if (onRoadBand && chance(0.7)) continue;
+
+          if (chance(0.46)) continue;
+
+          const w = rand(14, 40);
+          const d = rand(14, 40);
+          const h = rand(18, 170);
+
+          const onOuterRing = ax > 520 || az > 520;
+          const isFar = onOuterRing && chance(0.5);
+
+          const bx = x + rand(-14, 14);
+          const bz = z + rand(-14, 14);
+
+          makeBuilding(bx, bz, w, h, d, isFar);
+        }
+      }
+
+      // Big landmark towers and parkour blocks.
+      const special = [
+        [-260, -260, 48, 130, 48],
+        [260, -260, 54, 150, 54],
+        [-260, 260, 54, 180, 54],
+        [260, 260, 46, 160, 46],
+        [-340, 0, 66, 190, 66],
+        [340, 0, 66, 200, 66],
+        [0, -340, 58, 170, 58],
+        [0, 340, 58, 170, 58]
+      ];
+
+      for (const s of special) {
+        makeBuilding(s[0], s[1], s[2], s[3], s[4], false);
+      }
+
+      // Rooftop training path in the center area.
+      for (let i = -5; i <= 5; i++) {
+        if (i === 0) continue;
+        const plat = new THREE.Mesh(new THREE.BoxGeometry(28, 3.5, 28), matPlatform);
+        plat.position.set(i * 36, rand(3, 9), rand(-70, 70));
+        plat.castShadow = true;
+        plat.receiveShadow = true;
+        world.add(plat);
+        registerCollider(plat);
+        decoration.push(plat);
+
+        const glow = new THREE.Mesh(new THREE.SphereGeometry(1.1, 20, 20), matBeacon);
+        glow.position.set(plat.position.x, plat.position.y + 3.8, plat.position.z);
+        world.add(glow);
+        decoration.push(glow);
+      }
+    }
+
+    buildCity();
+
+    // Huge atmosphere blocks for screenshot-like scale in the distance.
+    function addSkyMonolith(x, z, w, h, d) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({
+        color: 0xdfe6f0,
+        roughness: 1,
+        metalness: 0
+      }));
+      m.position.set(x, h / 2 - 1.5, z);
+      world.add(m);
+      farBuildings.push(m);
+    }
+
+    addSkyMonolith(-620, -760, 180, 420, 180);
+    addSkyMonolith(720, -680, 190, 460, 190);
+    addSkyMonolith(-770, 670, 210, 410, 210);
+    addSkyMonolith(760, 770, 220, 430, 220);
+
+    // ============================================================
+    // EFFECTS / MOOD
+    // ============================================================
+    const sunGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(20, 24, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    sunGlow.position.set(220, 250, 120);
+    sunGlow.visible = false;
+    world.add(sunGlow);
+
+    // ============================================================
+    // BEACON / MISSION TARGET
+    // ============================================================
+    const beacon = new THREE.Group();
+    const beaconBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.2, 2.8, 1.2, 12),
+      matBeacon
+    );
+    beaconBase.position.y = 0.6;
+    beaconBase.castShadow = true;
+    beaconBase.receiveShadow = true;
+
+    const beaconOrb = new THREE.Mesh(
+      new THREE.SphereGeometry(1.25, 24, 24),
+      new THREE.MeshStandardMaterial({
+        color: 0x92e4ff,
+        roughness: 0.25,
+        metalness: 0.08,
+        emissive: 0x2fa5ff,
+        emissiveIntensity: 1.6
+      })
+    );
+    beaconOrb.position.y = 3.2;
+
+    const beaconLight = new THREE.PointLight(0x7ed9ff, 1.4, 28, 2.2);
+    beaconLight.position.y = 3.2;
+
+    beacon.add(beaconBase, beaconOrb, beaconLight);
+    beacon.position.set(120, 0, -130);
+    world.add(beacon);
+
+    // ============================================================
+    // DYNAMIC ROOF PADS / TRAINING CHECKPOINTS
+    // ============================================================
+    const checkpoints = [];
+    for (let i = 0; i < 8; i++) {
+      const pad = new THREE.Mesh(
+        new THREE.CylinderGeometry(5.5, 5.5, 0.8, 24),
+        new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          roughness: 1,
+          emissive: 0xb9dcff,
+          emissiveIntensity: 0.15
+        })
+      );
+      pad.position.set(rand(-120, 120), rand(0.6, 7), rand(-120, 120));
+      pad.receiveShadow = true;
+      world.add(pad);
+      checkpoints.push(pad);
+    }
+
+    // ============================================================
+    // SIMPLE "NPC"/DRONE PATROL ENEMIES
+    // ============================================================
+    const drones = [];
+    const droneGroup = new THREE.Group();
+    world.add(droneGroup);
+
+    function addDrone(radius, height, speed, phase) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 0.8, 1.2),
+        new THREE.MeshStandardMaterial({
+          color: 0xff7aa8,
+          emissive: 0x8a1132,
+          emissiveIntensity: 0.35,
+          roughness: 0.35
+        })
+      );
+      const wing = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.15, 0.35),
+        new THREE.MeshStandardMaterial({
+          color: 0xeef6ff,
+          roughness: 0.8,
+          metalness: 0.0
+        })
+      );
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 12, 12),
+        new THREE.MeshStandardMaterial({
+          color: 0x7edaff,
+          emissive: 0x2ea8ff,
+          emissiveIntensity: 2.0
+        })
+      );
+      eye.position.set(0.9, 0.15, 0.25);
+      g.add(body, wing, eye);
+      droneGroup.add(g);
+      drones.push({ g, radius, height, speed, phase, health: 1, radiusHit: 3.2 });
+    }
+
+    addDrone(230, 26, 0.55, 0.0);
+    addDrone(310, 42, 0.34, 1.7);
+    addDrone(180, 34, 0.75, 2.4);
+    addDrone(260, 55, 0.47, 0.9);
+
+    // ============================================================
+    // PLAYER / MODEL / ANIMATIONS
+    // ============================================================
+    const loader = new GLTFLoader();
+    let player = null;
+    let mixer = null;
+    let currentAction = null;
+    const actions = {};
+    let modelReady = false;
+
+    const playerRoot = new THREE.Group();
+    playerRoot.position.set(0, 0, 0);
+    world.add(playerRoot);
+
+    // Debug capsule for future tuning (hidden).
+    const debugCapsule = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.62, 1.0, 6, 10),
+      new THREE.MeshStandardMaterial({ color: 0xff00ff, transparent: true, opacity: 0.0 })
+    );
+    debugCapsule.visible = false;
+    playerRoot.add(debugCapsule);
+
+    function playAction(name, fade = 0.16, loop = THREE.LoopRepeat) {
+      if (!mixer) return;
+      const a = actions[name];
+      if (!a) return;
+      if (currentAction === a) return;
+      a.reset();
+      a.setLoop(loop, Infinity);
+      a.enabled = true;
+      a.fadeIn(fade).play();
+      if (currentAction) currentAction.fadeOut(fade);
+      currentAction = a;
+    }
+
+    function actionFromClipName(name) {
+      if (!name) return null;
+      const n = name.toLowerCase();
+      if (n.includes('idle')) return 'Idle';
+      if (n.includes('run') || n.includes('walk')) return 'Run';
+      if (n.includes('jump')) return 'Jump';
+      if (n.includes('land')) return 'Land';
+      return null;
+    }
+
+    loader.load(
+      './character.glb',
+      (gltf) => {
+        player = gltf.scene;
+        player.scale.setScalar(1.0);
+        player.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+          }
+        });
+        playerRoot.add(player);
+
+        mixer = new THREE.AnimationMixer(player);
+        for (const clip of gltf.animations) {
+          const key = actionFromClipName(clip.name) || clip.name;
+          actions[key] = mixer.clipAction(clip);
+        }
+
+        modelReady = true;
+        stateTxt.textContent = 'Idle';
+        playAction('Idle', 0.01);
+        showMessage('character.glb loaded');
+      },
+      undefined,
+      (err) => {
+        console.error(err);
+        stateTxt.textContent = 'model error';
+        showMessage('character.glb could not load', 2500);
+      }
+    );
+
+    // ============================================================
+    // INPUT
+    // ============================================================
+    const keys = Object.create(null);
+    const oneShot = Object.create(null);
+
+    addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      oneShot[e.code] = true;
+      if (e.code === 'KeyF') toggleFly();
+      if (e.code === 'KeyR') resetPlayer();
+      if (e.code === 'KeyQ') dash();
+      if (e.code === 'Digit1') cameraMode = 0;
+      if (e.code === 'Digit2') cameraMode = 1;
+      if (e.code === 'Digit3') cameraMode = 2;
+    });
+
+    addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    let pointerDown = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+
+    addEventListener('pointerdown', (e) => {
+      pointerDown = true;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
+    });
+
+    addEventListener('pointerup', () => {
+      pointerDown = false;
+    });
+
+    addEventListener('pointermove', (e) => {
+      if (!pointerDown) return;
+      const dx = e.clientX - lastPointerX;
+      const dy = e.clientY - lastPointerY;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
+      state.yaw -= dx * 0.0032;
+      state.pitch -= dy * 0.0025;
+      state.pitch = clamp(state.pitch, -0.8, 0.25);
+    });
+
+    // Mobile joystick
+    const stick = document.getElementById('stick');
+    const knob = document.getElementById('knob');
+    const joystick = {
+      active: false,
+      id: null,
+      baseX: 0,
+      baseY: 0,
+      vec: new THREE.Vector2(0, 0)
+    };
+
+    stick.addEventListener('pointerdown', (e) => {
+      joystick.active = true;
+      joystick.id = e.pointerId;
+      stick.setPointerCapture(e.pointerId);
+      const r = stick.getBoundingClientRect();
+      joystick.baseX = r.left + r.width / 2;
+      joystick.baseY = r.top + r.height / 2;
+    });
+
+    stick.addEventListener('pointermove', (e) => {
+      if (!joystick.active || joystick.id !== e.pointerId) return;
+      const dx = e.clientX - joystick.baseX;
+      const dy = e.clientY - joystick.baseY;
+      const max = 48;
+      const nx = clamp(dx / max, -1, 1);
+      const ny = clamp(dy / max, -1, 1);
+      joystick.vec.set(nx, ny);
+      knob.style.transform = `translate(${nx * 48}px, ${ny * 48}px)`;
+    });
+
+    function releaseStick(e) {
+      if (e.pointerId !== joystick.id) return;
+      joystick.active = false;
+      joystick.id = null;
+      joystick.vec.set(0, 0);
+      knob.style.transform = 'translate(0px, 0px)';
+    }
+    stick.addEventListener('pointerup', releaseStick);
+    stick.addEventListener('pointercancel', releaseStick);
+
+    function bindButton(id, onDown, onUp) {
+      const el = document.getElementById(id);
+      el.addEventListener('pointerdown', (e) => { e.preventDefault(); onDown?.(e); });
+      el.addEventListener('pointerup', (e) => { e.preventDefault(); onUp?.(e); });
+      el.addEventListener('pointercancel', (e) => { e.preventDefault(); onUp?.(e); });
+    }
+
+    bindButton('btnJump', () => jump());
+    bindButton('btnFly', () => toggleFly());
+    bindButton('btnSprint', () => { state.sprint = true; }, () => { state.sprint = false; });
+    bindButton('btnDash', () => dash());
+    bindButton('btnCam', () => { cameraMode = (cameraMode + 1) % 3; applyCameraLabel(); });
+
+    // ============================================================
+    // GAME STATE
+    // ============================================================
+    const state = {
+      yaw: 0,
+      pitch: -0.16,
+      flying: false,
+      sprint: false,
+      onGround: false,
+      jumps: 0,
+      health: 100,
+      speed: 0,
+      cameraMode: 1,
+      lastGroundY: 0,
+      dashCooldown: 0,
+      dashTime: 0,
+      dashVector: new THREE.Vector3(),
+      targetReached: false,
+      damageFlash: 0,
+      flightUp: false,
+      flightDown: false
+    };
+
+    function applyCameraLabel() {
+      cameraTxt.textContent = cameraModeLabel();
+    }
+
+    function cameraModeLabel() {
+      return state.cameraMode === 0 ? 'close' : state.cameraMode === 1 ? 'default' : 'wide';
+    }
+
+    applyCameraLabel();
+
+    function resetPlayer() {
+      if (!playerRoot) return;
+      playerRoot.position.set(0, 0, 0);
+      state.yaw = 0;
+      state.pitch = -0.16;
+      state.flying = false;
+      state.sprint = false;
+      state.onGround = false;
+      state.jumps = 0;
+      state.speed = 0;
+      state.health = 100;
+      state.dashCooldown = 0;
+      state.dashTime = 0;
+      state.targetReached = false;
+      state.damageFlash = 0;
+      state.flightUp = false;
+      state.flightDown = false;
+      healthFill.style.transform = 'scaleX(1)';
+      flightTxt.textContent = 'off';
+      showMessage('Player reset');
+    }
+
+    function toggleFly() {
+      state.flying = !state.flying;
+      state.jumps = 0;
+      flightTxt.textContent = state.flying ? 'on' : 'off';
+      showMessage(state.flying ? 'Flight enabled' : 'Flight disabled');
+      if (state.flying) {
+        state.velocityY = Math.max(state.velocityY || 0, 0);
+      }
+    }
+
+    function jump() {
+      if (state.flying) {
+        state.velocityY = (state.velocityY || 0) + 8.5;
+        return;
+      }
+      if (state.onGround || state.jumps < 2) {
+        state.velocityY = 11.8;
+        state.onGround = false;
+        state.jumps++;
+        state.jumpLock = 0.15;
+        if (player && actions.Jump) playAction('Jump', 0.06, THREE.LoopOnce);
+        showMessage(state.jumps > 1 ? 'Double Jump' : 'Jump');
+      }
+    }
+
+    function dash() {
+      if (state.dashCooldown > 0) return;
+      const forward = new THREE.Vector3(Math.sin(state.yaw), 0, Math.cos(state.yaw));
+      state.dashVector.copy(forward).multiplyScalar(22);
+      state.dashTime = 0.16;
+      state.dashCooldown = 0.8;
+      showMessage('Dash');
+    }
+
+    // ============================================================
+    // PHYSICS / MOVEMENT
+    // ============================================================
+    const tmpVec = new THREE.Vector3();
+    const tmpVec2 = new THREE.Vector3();
+    const tmpBox = new THREE.Box3();
+    const tmpCenter = new THREE.Vector3();
+    const tmpForward = new THREE.Vector3();
+    const tmpRight = new THREE.Vector3();
+
+    let velocityY = 0;
+
+    function groundHeightAt(x, z) {
+      // Flat deck, but could be expanded to terrain later.
+      return 0;
+    }
+
+    function resolveCollisions(nextPos) {
+      // A lightweight AABB push-out using collider boxes.
+      const playerRadius = 0.85;
+      const playerHeight = 2.0;
+      const playerMin = new THREE.Vector3(nextPos.x - playerRadius, nextPos.y, nextPos.z - playerRadius);
+      const playerMax = new THREE.Vector3(nextPos.x + playerRadius, nextPos.y + playerHeight, nextPos.z + playerRadius);
+      const pBox = new THREE.Box3(playerMin, playerMax);
+
+      for (const c of colliders) {
+        c.box.setFromObject(c.mesh);
+        if (!c.box.intersectsBox(pBox)) continue;
+
+        const cCenter = c.box.getCenter(tmpCenter);
+        const away = nextPos.clone().sub(cCenter);
+        away.y = 0;
+        if (away.lengthSq() < 0.0001) away.set(rand(-1,1), 0, rand(-1,1));
+        away.normalize();
+
+        nextPos.x = cCenter.x + away.x * (c.box.max.x - c.box.min.x) * 0.55;
+        nextPos.z = cCenter.z + away.z * (c.box.max.z - c.box.min.z) * 0.55;
+      }
+    }
+
+    function damage(amount) {
+      state.health = clamp(state.health - amount, 0, 100);
+      healthFill.style.transform = `scaleX(${state.health / 100})`;
+      state.damageFlash = 0.5;
+      if (state.health <= 0) {
+        showMessage('Respawning...', 1200);
+        setTimeout(resetPlayer, 300);
+      }
+    }
+
+    // ============================================================
+    // CAMERA CONTROL
+    // ============================================================
+    let cameraMode = 1;
+    let desiredCamPos = new THREE.Vector3();
+    let camLook = new THREE.Vector3();
+    let camShake = new THREE.Vector3();
+
+    function updateCamera(dt) {
+      const p = playerRoot.position;
+      const camDistance = cameraMode === 0 ? 8.5 : cameraMode === 1 ? 13.5 : 18.5;
+      const camHeight = state.flying ? 5.0 : 3.8;
+
+      tmpForward.set(Math.sin(state.yaw), 0, Math.cos(state.yaw));
+      tmpRight.set(-tmpForward.z, 0, tmpForward.x);
+
+      const yawRot = new THREE.Vector3(0, 1, 0);
+      const offset = new THREE.Vector3(0, camHeight, camDistance);
+      offset.applyAxisAngle(yawRot, state.yaw);
+      offset.applyAxisAngle(new THREE.Vector3(1,0,0), state.pitch);
+
+      desiredCamPos.copy(p).add(offset);
+      camera.position.lerp(desiredCamPos, 0.12);
+
+      camLook.copy(p).add(new THREE.Vector3(0, 1.45, 0));
+      camera.lookAt(camLook);
+    }
+
+    // ============================================================
+    // DYNAMIC SYSTEMS
+    // ============================================================
+    function updateBeacon(t) {
+      beacon.rotation.y = t * 1.25;
+      beaconOrb.scale.setScalar(1 + Math.sin(t * 4) * 0.07);
+      beaconLight.intensity = 1.2 + Math.sin(t * 3.5) * 0.15;
+    }
+
+    function updateDrones(t, dt) {
+      for (let i = 0; i < drones.length; i++) {
+        const d = drones[i];
+        const a = t * d.speed + d.phase;
+        d.g.position.set(Math.cos(a) * d.radius, d.height + Math.sin(a * 2.1) * 2.0, Math.sin(a) * d.radius);
+        d.g.rotation.y = -a + Math.PI / 2;
+        d.g.rotation.z = Math.sin(a * 3) * 0.08;
+
+        const dist = d.g.position.distanceTo(playerRoot.position);
+        if (dist < d.radiusHit) {
+          damage(dt * 18);
+        }
+      }
+    }
+
+    function updateCheckpoints(t) {
+      for (let i = 0; i < checkpoints.length; i++) {
+        checkpoints[i].rotation.y = t * 0.4 + i;
+        checkpoints[i].position.y = 0.6 + Math.sin(t * 1.7 + i) * 0.15;
+      }
+    }
+
+    function updateAtmosphere(t) {
+      const dayMix = (Math.sin(t * 0.04) + 1) * 0.5;
+      const bgDay = new THREE.Color(0x98cbee);
+      const bgNight = new THREE.Color(0x0b1320);
+      scene.background.copy(bgNight).lerp(bgDay, dayMix);
+      scene.fog.color.copy(scene.background);
+      sun.position.set(Math.cos(t * 0.04) * 220, 180 + dayMix * 120, Math.sin(t * 0.04) * 220);
+      sun.intensity = 2.2 + dayMix * 1.1;
+      hemi.intensity = 0.9 + dayMix * 0.55;
+    }
+
+    // ============================================================
+    // ANIMATION / PLAYER UPDATE
+    // ============================================================
+    const moveInput = new THREE.Vector2();
+    const velocity = new THREE.Vector3();
+
+    function getInputVector() {
+      let x = 0;
+      let y = 0;
+      if (keys['KeyA'] || keys['ArrowLeft']) x -= 1;
+      if (keys['KeyD'] || keys['ArrowRight']) x += 1;
+      if (keys['KeyW'] || keys['ArrowUp']) y -= 1;
+      if (keys['KeyS'] || keys['ArrowDown']) y += 1;
+
+      if (joystick.active) {
+        x += joystick.vec.x;
+        y += joystick.vec.y;
+      }
+
+      moveInput.set(x, y);
+      if (moveInput.lengthSq() > 1) moveInput.normalize();
+      return moveInput;
+    }
+
+    function updateAnimations() {
+      if (!player || !mixer) return;
+
+      const horizontalSpeed = Math.hypot(velocity.x, velocity.z);
+      if (state.flying) {
+        if (horizontalSpeed > 0.2 && actions.Run) playAction('Run', 0.12);
+        else if (actions.Idle) playAction('Idle', 0.18);
+        stateTxt.textContent = 'Flying';
+        return;
+      }
+
+      if (!state.onGround) {
+        stateTxt.textContent = 'Airborne';
+        if (velocityY > 0.25 && actions.Jump) {
+          playAction('Jump', 0.1, THREE.LoopOnce);
+        }
+        return;
+      }
+
+      if (horizontalSpeed > 0.2) {
+        stateTxt.textContent = state.sprint ? 'Sprint' : 'Run';
+        if (actions.Run) playAction('Run', 0.14);
+      } else {
+        stateTxt.textContent = 'Idle';
+        if (actions.Idle) playAction('Idle', 0.18);
+      }
+    }
+
+    function updatePlayer(dt, t) {
+      if (!player || !modelReady) return;
+
+      const input = getInputVector();
+      const hasInput = input.lengthSq() > 0.001;
+
+      const walkSpeed = state.sprint ? 12.5 : 7.2;
+      const flySpeed = state.sprint ? 16 : 10;
+
+      // Character faces movement direction or camera direction.
+      if (hasInput) {
+        const moveYaw = Math.atan2(input.x, -input.y);
+        const targetYaw = state.yaw + moveYaw;
+        player.rotation.y = lerpAngle(player.rotation.y, targetYaw, 0.18);
+      } else {
+        player.rotation.y = lerpAngle(player.rotation.y, state.yaw, 0.08);
+      }
+
+      // Main movement vector aligned with camera yaw.
+      const forward = new THREE.Vector3(Math.sin(state.yaw), 0, Math.cos(state.yaw));
+      const right = new THREE.Vector3(-forward.z, 0, forward.x);
+
+      tmpVec.copy(forward).multiplyScalar(-input.y);
+      tmpVec2.copy(right).multiplyScalar(input.x);
+      const dir = tmpVec.add(tmpVec2);
+
+      // Dash timer & cooldown.
+      if (state.dashCooldown > 0) state.dashCooldown = Math.max(0, state.dashCooldown - dt);
+      if (state.dashTime > 0) state.dashTime = Math.max(0, state.dashTime - dt);
+
+      // Gravity / flight.
+      if (state.flying) {
+        // Horizontal movement.
+        if (hasInput) {
+          velocity.x = dir.x * flySpeed;
+          velocity.z = dir.z * flySpeed;
+        } else {
+          velocity.x *= Math.pow(0.0001, dt);
+          velocity.z *= Math.pow(0.0001, dt);
+        }
+
+        // Vertical flight controls.
+        const up = keys['Space'] || state.flightUp;
+        const down = keys['ControlLeft'] || keys['ControlRight'] || state.flightDown;
+
+        if (up) velocityY += 22 * dt;
+        if (down) velocityY -= 22 * dt;
+        velocityY *= 0.92;
+
+        // Hover damping.
+        if (!up && !down) velocityY *= 0.96;
+
+        state.onGround = false;
+      } else {
+        // Running / walking.
+        if (hasInput) {
+          velocity.x = dir.x * walkSpeed;
+          velocity.z = dir.z * walkSpeed;
+        } else {
+          velocity.x *= Math.pow(0.00006, dt);
+          velocity.z *= Math.pow(0.00006, dt);
+        }
+
+        velocityY -= 28 * dt;
+        velocityY = Math.max(velocityY, -42);
+      }
+
+      // Sprint pulse and body motion.
+      const moveMag = Math.hypot(velocity.x, velocity.z);
+      state.speed = moveMag;
+
+      // Dash boost in facing direction.
+      if (state.dashTime > 0) {
+        velocity.x += state.dashVector.x;
+        velocity.z += state.dashVector.z;
+        if (state.flying) velocityY += 2;
+      }
+
+      // Next position.
+      const nextPos = playerRoot.position.clone();
+      nextPos.x += velocity.x * dt;
+      nextPos.z += velocity.z * dt;
+      nextPos.y += velocityY * dt;
+
+      // Ground / landing.
+      const gY = groundHeightAt(nextPos.x, nextPos.z);
+      state.onGround = false;
+
+      if (!state.flying && nextPos.y <= gY) {
+        nextPos.y = gY;
+        if (velocityY < 0) {
+          if (!state.onGround) {
+            // landing only when coming from air
+            if (Math.abs(velocityY) > 8 && actions.Land) playAction('Land', 0.04, THREE.LoopOnce);
+            if (Math.abs(velocityY) > 8) showMessage('Landing', 700);
+          }
+          velocityY = 0;
+          state.onGround = true;
+          state.jumps = 0;
+        }
+      }
+
+      // Building collision.
+      resolveCollisions(nextPos);
+
+      // Keep above deck.
+      nextPos.y = Math.max(nextPos.y, gY);
+
+      // Apply final position.
+      playerRoot.position.copy(nextPos);
+
+      // Slight model bob for life.
+      if (state.onGround && moveMag > 0.2) {
+        player.position.y = Math.sin(t * (state.sprint ? 18 : 12)) * 0.03;
+      } else {
+        player.position.y = 0;
+      }
+
+      // Health flash effect.
+      if (state.damageFlash > 0) {
+        state.damageFlash = Math.max(0, state.damageFlash - dt);
+        scene.fog.color.lerp(new THREE.Color(0xffdede), 0.08);
+      }
+
+      // Camera / input labels.
+      speedTxt.textContent = moveMag.toFixed(1);
+      flightTxt.textContent = state.flying ? 'on' : 'off';
+      cameraTxt.textContent = cameraModeLabel();
+
+      // Mission trigger.
+      if (!state.targetReached && playerRoot.position.distanceTo(beacon.position) < 12) {
+        state.targetReached = true;
+        setMission('Great! You reached the beacon. Now try sprinting, double jumping, and flying across the rooftops.');
+        showMessage('Mission complete!', 1800);
+      }
+
+      updateAnimations();
+    }
+
+    // ============================================================
+    // MINIMAP
+    // ============================================================
+    function drawMinimap() {
+      const w = minimap.width;
+      const h = minimap.height;
+
+      mm.clearRect(0, 0, w, h);
+
+      // Background.
+      mm.fillStyle = 'rgba(14, 20, 30, 0.95)';
+      mm.fillRect(0, 0, w, h);
+
+      // Map frame.
+      mm.strokeStyle = 'rgba(255,255,255,0.12)';
+      mm.lineWidth = 2;
+      mm.strokeRect(1, 1, w - 2, h - 2);
+
+      const range = 450;
+      const scale = (w - 24) / (range * 2);
+
+      function mapX(x) { return w / 2 + x * scale; }
+      function mapY(z) { return h / 2 + z * scale; }
+
+      // The main training deck.
+      mm.fillStyle = 'rgba(255,255,255,0.08)';
+      mm.fillRect(mapX(-160), mapY(-160), (320) * scale, (320) * scale);
+
+      // Beacon.
+      mm.fillStyle = '#67d2ff';
+      mm.beginPath();
+      mm.arc(mapX(beacon.position.x), mapY(beacon.position.z), 4, 0, Math.PI * 2);
+      mm.fill();
+
+      // Drones.
+      mm.fillStyle = '#ff7aa8';
+      for (const d of drones) {
+        mm.beginPath();
+        mm.arc(mapX(d.g.position.x), mapY(d.g.position.z), 3, 0, Math.PI * 2);
+        mm.fill();
+      }
+
+      // Player.
+      const px = mapX(playerRoot.position.x);
+      const py = mapY(playerRoot.position.z);
+      const angle = state.yaw;
+      mm.save();
+      mm.translate(px, py);
+      mm.rotate(-angle);
+      mm.fillStyle = '#ffffff';
+      mm.beginPath();
+      mm.moveTo(0, -5);
+      mm.lineTo(4, 5);
+      mm.lineTo(0, 2);
+      mm.lineTo(-4, 5);
+      mm.closePath();
+      mm.fill();
+      mm.restore();
+
+      // Compass-like center lines.
+      mm.strokeStyle = 'rgba(255,255,255,.06)';
+      mm.beginPath();
+      mm.moveTo(w/2, 12);
+      mm.lineTo(w/2, h-12);
+      mm.moveTo(12, h/2);
+      mm.lineTo(w-12, h/2);
+      mm.stroke();
+    }
+
+    // ============================================================
+    // GAME LOOP
+    // ============================================================
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.033);
+      const t = clock.elapsedTime;
+
+      if (mixer) mixer.update(dt);
+
+      updateAtmosphere(t);
+      updateBeacon(t);
+      updateDrones(t, dt);
+      updateCheckpoints(t);
+      updatePlayer(dt, t);
+      updateCamera(dt);
+
+      // Beastly training atmosphere: rotating beacon glow.
+      beacon.scale.setScalar(1 + Math.sin(t * 3) * 0.02);
+
+      // HUD.
+      healthFill.style.transform = `scaleX(${state.health / 100})`;
+
+      // Clean state labels for model load.
+      if (!modelReady) stateTxt.textContent = 'loading';
+
+      drawMinimap();
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // ============================================================
+    // RESIZE
+    // ============================================================
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    });
+
+    // ============================================================
+    // SAVE / RESTORE SMALL SETTINGS
+    // ============================================================
+    try {
+      const saved = JSON.parse(localStorage.getItem('pm_style_settings') || '{}');
+      if (typeof saved.cameraMode === 'number') {
+        state.cameraMode = saved.cameraMode;
+        cameraMode = saved.cameraMode;
+        applyCameraLabel();
+      }
+    } catch (e) {}
+
+    window.addEventListener('beforeunload', () => {
+      try {
+        localStorage.setItem('pm_style_settings', JSON.stringify({
+          cameraMode: state.cameraMode
+        }));
+      } catch (e) {}
+    });
+
+    // Keep camera mode in sync with buttons / keys.
+    function syncCameraMode() {
+      state.cameraMode = cameraMode;
+      applyCameraLabel();
+    }
+    setInterval(syncCameraMode, 300);
+
+    // ============================================================
+    // EXTRA CONTROLS FOR MOBILE
+    // ============================================================
+    state.flightUp = false;
+    state.flightDown = false;
+
+    // Tap/click hints.
+    setTimeout(() => {
+      if (!modelReady) {
+        showMessage('Loading character.glb...');
+      }
+    }, 700);
+
+    // Optional keyboard flight up/down on mobile-like devices.
+    addEventListener('keydown', (e) => {
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') state.sprint = true;
+      if (e.code === 'Space') {
+        if (state.flying) {
+          state.flightUp = true;
+        } else {
+          jump();
+        }
+      }
+      if (e.code === 'ControlLeft' || e.code === 'ControlRight') state.flightDown = true;
+    });
+
+    addEventListener('keyup', (e) => {
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') state.sprint = false;
+      if (e.code === 'Space') state.flightUp = false;
+      if (e.code === 'ControlLeft' || e.code === 'ControlRight') state.flightDown = false;
+    });
+
+    // ============================================================
+    // START MESSAGE
+    // ============================================================
+    showMessage('Tap/drag to look around', 1800);
+  </script>
+</body>
+</html>
